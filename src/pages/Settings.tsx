@@ -1,11 +1,16 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
-import { useOAuthCreateSession, useOAuthClearSession } from '@/hooks/useProvider';
+import {
+  useOAuthCreateSession,
+  useOAuthClearSession,
+  useOAuthRefreshSession,
+} from '@/hooks/useProvider';
 
 const Settings = () => {
   const createSession = useOAuthCreateSession();
   const clearSession = useOAuthClearSession();
+  const refreshSession = useOAuthRefreshSession();
 
   return (
     <div className='space-y-6'>
@@ -15,7 +20,13 @@ const Settings = () => {
       </h1>
 
       <div className='flex gap-4'>
-        <Button onClick={() => createSession.mutate()} variant='secondary' className='flex gap-2'>
+        <Button
+          isLoading={createSession.isPending}
+          disabled={createSession.isPending}
+          onClick={() => createSession.mutate()}
+          variant='secondary'
+          className='flex gap-2'
+        >
           <svg
             xmlns='http://www.w3.org/2000/svg'
             x='0px'
@@ -42,8 +53,20 @@ const Settings = () => {
           </svg>
           Google
         </Button>
-        <Button variant='secondary'>Refresh Session</Button>
-        <Button onClick={() => clearSession.mutate()} variant='destructive'>
+        <Button
+          isLoading={refreshSession.isPending}
+          disabled={refreshSession.isPending}
+          onClick={() => refreshSession.mutate()}
+          variant='secondary'
+        >
+          Refresh Session
+        </Button>
+        <Button
+          isLoading={clearSession.isPending}
+          disabled={clearSession.isPending}
+          onClick={() => clearSession.mutate()}
+          variant='destructive'
+        >
           Clear Session
         </Button>
       </div>

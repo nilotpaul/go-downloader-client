@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
+import { AxiosError, AxiosResponse } from 'axios';
 import axios from '@/lib/axiosConfig';
 import { toast } from 'sonner';
 import ReconnectingWebSocket, { CloseEvent, ErrorEvent } from 'reconnecting-websocket';
@@ -13,12 +13,7 @@ import { useEffect, useRef } from 'react';
 export const useDownload = ({
   onSettled,
 }: {
-  onSettled?: (
-    data: any,
-    error: Error | null,
-    variables: DownloadSchema,
-    context: unknown
-  ) => unknown;
+  onSettled?: (data?: { status: number; file_ids: string[] }) => void | Promise<void>;
 } = {}) => {
   const form = useForm<DownloadSchema>({
     resolver: zodResolver(downloadSchema),
@@ -29,15 +24,18 @@ export const useDownload = ({
   });
 
   const mutationResult = useMutation({
-    mutationFn: async ({ links, path }: DownloadSchema) => {
-      const url = `/api/v1/download?links=${links}&path=${path}`;
-      const { data } = await axios.get(url);
+    mutationFn: async (payload: DownloadSchema) => {
+      const { data } = await axios.post<{ status: number; file_ids: string[] }>(
+        '/api/v1/download',
+        payload
+      );
       return data;
     },
     onSuccess: async (data) => {
       console.log('download started: ', data?.file_ids);
-      await wait(2000);
 
+      wait(1500);
+      form.reset();
       toast.success(`${data?.file_ids?.length} download(s) started`);
     },
     onError: (err) => {
@@ -48,13 +46,23 @@ export const useDownload = ({
       }
       toast.error('something went wrong');
     },
-    onSettled,
+    onSettled: async (data) => {
+      if (onSettled) {
+        await onSettled(data);
+      }
+    },
   });
 
   return [form, mutationResult] as const;
 };
 
-export const useWSProgress = () => {
+export const useWSProgress = ({
+  onWSInfo,
+  onWSError,
+}: {
+  onWSInfo?: (info: string) => void;
+  onWSError?: (err: string) => void;
+} = {}) => {
   const queryClient = useQueryClient();
   const sockRef = useRef<ReconnectingWebSocket | null>(null);
 
@@ -65,14 +73,17 @@ export const useWSProgress = () => {
     const data = JSON.parse(e.data ?? '{}');
     if (data?.errMsg) {
       queryClient.setQueryData(['ws-progress-error'], data?.errMsg);
+      onWSError?.(data?.errMsg);
       sockRef.current?.close();
       return;
     }
     if (data?.infoMsg) {
       queryClient.setQueryData(['ws-progress-info'], data?.infoMsg);
+      onWSInfo?.(data?.infoMsg);
       return;
     }
     if (data?.length !== 0) {
+      console.info(data);
       queryClient.setQueryData(['ws-progress'], data);
       return;
     }
@@ -122,7 +133,11 @@ export const useWSProgress = () => {
   };
 };
 
-export const useProgress = () => {
+export const useProgress = ({
+  onError,
+}: {
+  onError?: (res: AxiosResponse<any, any> | undefined) => void;
+} = {}) => {
   const queryClient = useQueryClient();
   const ws = useWSProgress();
   const queryResult = useQuery<Progress[]>({
@@ -142,7 +157,7 @@ export const useProgress = () => {
     if (!!queryResult.data && queryResult.data?.length !== 0) {
       console.log(queryResult.data);
       queryClient.setQueryData(['ws-progress'], queryResult.data);
-      ws.connectToWSProgress('ws://localhost:3000/api/v1/ws/progress');
+      ws.connectToWSProgress('/api/v1/ws/progress');
     }
 
     return () => {
@@ -157,6 +172,10 @@ export const useProgress = () => {
   ) {
     const res = queryResult.error.response;
     queryClient.setQueryData(['ws-progress-info'], res?.data?.errMsg);
+  }
+  if (queryResult.isError && queryResult.error instanceof AxiosError) {
+    const res = queryResult.error.response;
+    onError?.(res);
   }
 
   return queryResult;

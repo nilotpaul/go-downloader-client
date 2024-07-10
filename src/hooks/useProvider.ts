@@ -44,3 +44,24 @@ export const useOAuthClearSession = () => {
     },
   });
 };
+
+export const useOAuthRefreshSession = () => {
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await axios.post('/api/v1/refresh');
+      return data;
+    },
+    onError: (err) => {
+      console.error(err);
+
+      if (err instanceof AxiosError) {
+        return toast.error(err.response?.data?.errMsg ?? 'something went wrong');
+      }
+      toast.error('something went wrong');
+    },
+    onSuccess: () => {
+      console.log('success');
+      toast.success('session refreshed');
+    },
+  });
+};

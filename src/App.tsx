@@ -6,7 +6,7 @@ const App = () => {
     <>
       <Menu />
 
-      <div className='mx-auto mt-12 max-w-5xl px-3'>
+      <div className='mx-auto my-24 mt-12 max-w-5xl px-3'>
         <Outlet />
       </div>
     </>

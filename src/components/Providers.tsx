@@ -33,7 +33,7 @@ const Providers = () => {
         closeButton
         cn={cn}
         expand
-        duration={2800}
+        duration={2500}
         position='bottom-right'
         richColors
         theme='system'

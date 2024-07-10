@@ -3,7 +3,8 @@ export type Progress = {
   current: number;
   speed: number;
   complete: boolean;
-  startTime: number;
-  endTime: number;
+  startTime: Date;
+  endTime: Date;
   file_id: string;
+  total: number;
 };
