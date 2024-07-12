@@ -1,20 +1,23 @@
 import path from 'path';
 import react from '@vitejs/plugin-react-swc';
-import { defineConfig } from 'vite';
+import { defineConfig, ConfigEnv } from 'vite';
 import dotenv from 'dotenv';
 
 dotenv.config({
   path: './.env',
 });
 
-export default () => {
+export default ({ mode }: ConfigEnv) => {
   const SERVER_URL = process.env.SERVER_URL;
   const WS_SERVER_URL = process.env.WS_SERVER_URL;
-  if (!WS_SERVER_URL) {
-    throw new Error('No SEVER_URL is defined');
-  }
-  if (!SERVER_URL) {
-    throw new Error('No WS_SERVER_URL is defined');
+
+  if (mode !== 'production') {
+    if (!WS_SERVER_URL) {
+      throw new Error('No SEVER_URL is defined');
+    }
+    if (!SERVER_URL) {
+      throw new Error('No WS_SERVER_URL is defined');
+    }
   }
 
   return defineConfig({
