@@ -47,9 +47,7 @@ export const useDownload = ({
       toast.error('something went wrong');
     },
     onSettled: async (data) => {
-      if (onSettled) {
-        await onSettled(data);
-      }
+      await onSettled?.(data);
     },
   });
 
@@ -79,6 +77,16 @@ export const useWSProgress = ({
     }
     if (data?.infoMsg) {
       queryClient.setQueryData(['ws-progress-info'], data?.infoMsg);
+
+      const currentProgressData = queryClient.getQueryData<Progress[]>(['ws-progress']);
+      if (
+        !!currentProgressData &&
+        currentProgressData?.length !== 0 &&
+        data?.infoMsg === 'no pending downloads'
+      ) {
+        queryClient.setQueryData(['ws-progress'], []);
+      }
+
       onWSInfo?.(data?.infoMsg);
       return;
     }
