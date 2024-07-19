@@ -1,12 +1,15 @@
 import { Progress } from '@/types';
 import { Progress as Prog } from './ui/progress';
 import { Button } from './ui/button';
+import { useCancelDownload } from '@/hooks/useDownload';
 
 type ProgressBarProps = {
   progress: Progress;
 };
 
 const ProgressBar = ({ progress }: ProgressBarProps) => {
+  const cancel = useCancelDownload();
+
   return (
     <>
       <div className='mt-3 w-full space-y-1.5 rounded-md bg-gray-900 p-2 text-sm'>
@@ -20,7 +23,14 @@ const ProgressBar = ({ progress }: ProgressBarProps) => {
           </div>
         </div>
 
-        <Button size='sm' className='w-fit' variant='destructive'>
+        <Button
+          disabled={cancel.isPending}
+          isLoading={cancel.isPending}
+          onClick={() => cancel.mutate({ file_id: progress.file_id, cancelAll: false })}
+          size='sm'
+          className='w-fit'
+          variant='destructive'
+        >
           Cancel
         </Button>
       </div>

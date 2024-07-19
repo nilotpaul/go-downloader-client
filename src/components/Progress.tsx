@@ -1,10 +1,11 @@
-import { useProgress } from '@/hooks/useDownload';
+import { useCancelDownload, useProgress } from '@/hooks/useDownload';
 import { type Progress } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Separator } from './ui/separator';
 import ProgressBar from './ProgressBar';
+import { Button } from './ui/button';
 
 const Progress = () => {
   const initialProgress = useProgress({
@@ -14,6 +15,7 @@ const Progress = () => {
       }
     },
   });
+  const cancelAll = useCancelDownload();
 
   const { data: progress } = useQuery<Progress[]>({
     queryKey: ['ws-progress'],
@@ -35,6 +37,16 @@ const Progress = () => {
       {!!progress && progress?.length !== 0 && (
         <>
           <p className='font-medium'>Pending: {initialProgress.data?.length || progress?.length}</p>
+          <Button
+            disabled={cancelAll.isPending}
+            isLoading={cancelAll.isPending}
+            onClick={() => cancelAll.mutate({ cancelAll: true })}
+            type='button'
+            variant='destructive'
+            className='my-3'
+          >
+            Cancel All
+          </Button>
 
           {progress
             ?.sort((a, b) => a.total - b.total)

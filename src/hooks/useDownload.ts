@@ -54,6 +54,41 @@ export const useDownload = ({
   return [form, mutationResult] as const;
 };
 
+export const useCancelDownload = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ file_id, cancelAll }: { file_id?: string; cancelAll: boolean }) => {
+      if (!cancelAll) {
+        await axios.post('/api/v1/cancel', { file_id });
+      } else {
+        await axios.post('/api/v1/cancelAll');
+      }
+    },
+    onError: (err) => {
+      console.error(err);
+
+      if (err instanceof AxiosError) {
+        return toast.error(err.response?.data?.errMsg ?? 'something went wrong');
+      }
+      toast.error('something went wrong');
+    },
+    onSuccess: (_, data) => {
+      console.log('success');
+      if (!data?.file_id) {
+        toast.success('downloads cancelled');
+      } else {
+        toast.success(`download cancelled for ${data.file_id}`);
+      }
+    },
+    onSettled: () => {
+      const pendingDownloads = queryClient.getQueryData<Progress[]>(['progress']);
+      if (!!pendingDownloads && pendingDownloads?.length <= 1) {
+        queryClient.invalidateQueries({ queryKey: ['progress'] });
+      }
+    },
+  });
+};
+
 export const useWSProgress = ({
   onWSInfo,
   onWSError,

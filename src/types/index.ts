@@ -8,3 +8,9 @@ export type Progress = {
   file_id: string;
   total: number;
 };
+
+export type FolderTreeNode = {
+  path: string;
+  name: string;
+  children?: FolderTreeNode[];
+};
